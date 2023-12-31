@@ -18,6 +18,14 @@ bool RectCollision (SDL_Rect rect1, SDL_Rect rect2) {
 	}	
 	return false;
 }
+SDL_Rect makeRect(int x, int y, int w, int h) {
+	SDL_Rect rect;
+	rect.x = x;
+	rect.y = y;
+	rect.x = w;
+	rect.h = h;
+	return rect;
+}
 //Bully Class
 class Jerk {
 	private:
@@ -26,7 +34,7 @@ class Jerk {
 		SDL_Surface * image = IMG_Load("Images/jerk.png");
 		SDL_Rect pos;
 	public:
-		Jerk(SDL_Window* win) {
+		Jerk() {
 			pos.x = 0;
 			pos.y = 0;
 			pos.w = 50;
@@ -39,23 +47,36 @@ class Jerk {
 		SDL_Rect getPosition() {
 			return pos;
 		}
-};
 //function to move the bully
 //function to display the bully
+};
+//Button class
+class Button {
+	private:
+		SDL_Surface * image;
+		SDL_Rect pos;
+	public:		
+		Button(const char* file, SDL_Rect position) {
+			image = IMG_Load(file);
+			pos = position;
+		}
+		void display(SDL_Window* win) {
+			SDL_BlitSurface(image, NULL, SDL_GetWindowSurface(win), &pos);
+		}
+		bool clicked(int x, int y) {
+			return pointRectCollision(x, y, pos);
+		}
+};
 //Homescreen mainloop
 const char* home(SDL_Window * win) {
+	SDL_Rect home_page_pos = makeRect(0, 0, 50, 100);
 	SDL_Event ev;
-	Jerk jerk(win);
+	Button button("Images/jerk.png", makeRect(0, 0, 50, 100));
 	SDL_Surface * home_page = IMG_Load("Images/homepage.png");
-	SDL_Rect home_page_pos;
-	home_page_pos.x = 0;
-	home_page_pos.y = 0;
-	home_page_pos.w = 1360;
-	home_page_pos.h = 660;
 	while (true){
 		SDL_Surface * win_surface = SDL_GetWindowSurface(win);
 		SDL_BlitSurface(home_page, NULL, win_surface, &home_page_pos);
-		jerk.display(win);
+		button.display(win);
 		SDL_UpdateWindowSurface(win);
 		//get events
 		while (SDL_PollEvent(&ev)) {
@@ -63,7 +84,7 @@ const char* home(SDL_Window * win) {
 				return "Quit";
 			}
 			else if (ev.type == SDL_MOUSEBUTTONDOWN) {
-				if (pointRectCollision(ev.button.x, ev.button.y, jerk.getPosition())) {
+				if (button.clicked(ev.pos.x,, ev.pos.y)) {
 					cout << "hey, that tickles" << endl;
 				}
 				else {
@@ -72,10 +93,10 @@ const char* home(SDL_Window * win) {
 			}
 		}
 	}
-}
 //	get events
 //		cursor (can be used to move to the start location)
 //		display the window
+
 //Game mainloop
 const char* game(SDL_Window* win) {
 	return "NOT READY";
@@ -85,7 +106,7 @@ const char* game(SDL_Window* win) {
 //		a (add item to your bulliers inventory if your close enough to something)
 //		cursor (can be used to exit back to homescreen)
 //	display all characters
-//	move all characters (acording to a set speed as pixels/second)
+//	move all characters (according to a set speed as pixels/second)
 //	randomly spawn an item
 //	randomly spawn a character
 //	randomly spawn a bully
@@ -94,7 +115,7 @@ const char* game(SDL_Window* win) {
 int main(int argc, char** args) {
 	//Setup
 	SDL_Init(SDL_INIT_EVERYTHING);
-	SDL_Window* win = SDL_CreateWindow("Control the Jerk", 0, 0, 1360, 660, 0);
+	SDL_Window* win = SDL_CreateWindow("Control the Jerk", 0, 0, 1000, 660, 0);
 	//Mainloop
 	try {
 		while (true) {
