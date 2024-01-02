@@ -22,11 +22,11 @@ SDL_Rect makeRect(int x, int y, int w, int h) {
 	SDL_Rect rect;
 	rect.x = x;
 	rect.y = y;
-	rect.x = w;
+	rect.w = w;
 	rect.h = h;
 	return rect;
 }
-//Bully Class
+//Jerk Class
 class Jerk {
 	private:
 		//setup variables
@@ -47,8 +47,8 @@ class Jerk {
 		SDL_Rect getPosition() {
 			return pos;
 		}
-//function to move the bully
-//function to display the bully
+		//function to move the bully
+		//function to display the bully
 };
 //Button class
 class Button {
@@ -69,37 +69,37 @@ class Button {
 };
 //Homescreen mainloop
 const char* home(SDL_Window * win) {
-	SDL_Rect home_page_pos = makeRect(0, 0, 50, 100);
+	//Setup images and rects
+	SDL_Rect home_page_pos = makeRect(0, 0, 1000, 660);
 	SDL_Event ev;
-	Button button("Images/jerk.png", makeRect(0, 0, 50, 100));
+	Button button("Images/start.png", makeRect(350, 510, 300, 75));
 	SDL_Surface * home_page = IMG_Load("Images/homepage.png");
-	while (true){
-		SDL_Surface * win_surface = SDL_GetWindowSurface(win);
-		SDL_BlitSurface(home_page, NULL, win_surface, &home_page_pos);
-		button.display(win);
-		SDL_UpdateWindowSurface(win);
+	//No animation, no need to do this inside the mainloop
+	SDL_Surface * win_surface = SDL_GetWindowSurface(win);
+	SDL_BlitSurface(home_page, NULL, win_surface, &home_page_pos);
+	button.display(win);
+	SDL_UpdateWindowSurface(win);
+	while (true) {
 		//get events
 		while (SDL_PollEvent(&ev)) {
 			if (ev.type == SDL_QUIT) {
 				return "Quit";
 			}
+			//cursor (can be used to start the game)
 			else if (ev.type == SDL_MOUSEBUTTONDOWN) {
-				if (button.clicked(ev.pos.x,, ev.pos.y)) {
-					cout << "hey, that tickles" << endl;
+				if (button.clicked(ev.button.x, ev.button.y)) {
+					return "Game";
 				}
-				else {
-					cout << "Naa na na boo boo" << endl;
-				}
+				cout << ev.button.x << endl;
+				cout << ev.button.y << endl;
 			}
 		}
 	}
-//	get events
-//		cursor (can be used to move to the start location)
-//		display the window
-
+}
 //Game mainloop
 const char* game(SDL_Window* win) {
 	return "NOT READY";
+
 //	get events
 //		arrows(move)
 //		space(bully if your close enough to someone who has your item or, if their is nobody, but their is a bully, then you can knock them down before they bully you)
