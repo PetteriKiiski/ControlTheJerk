@@ -1,4 +1,5 @@
 //A simple game were you control the jerk, of a jerk, so that you can bully people.
+#define JERK_PER_SECOND 0.001
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <iostream>
@@ -42,6 +43,11 @@ class Jerk {
 		SDL_Surface * image = IMG_Load("Images/jerk.png");
 		SDL_Rect pos;
 		SDL_Window* win;
+		uint64_t last_move = epochTime();
+		uint64_t left_duration = 0;
+		uint64_t right_duration = 0;
+		uint64_t up_duration = 0;
+		uint64_t down_duration = 0;
 	public:
 		Jerk(SDL_Window* window) {
 			pos.x = 475;
@@ -50,14 +56,68 @@ class Jerk {
 			pos.h = 100;
 			win = window;
 		}
+		//function to display the bully
 		void display() {
 			SDL_BlitSurface(image, NULL, SDL_GetWindowSurface(win), &pos);
 		}
 		//function to move the bully
 		void move() {
-			
+			uint64_t t = epochTime() - last_move;
+			pos.y += t * velocity[1] + 0.5 * t * pow(acceleration[1], 2) + (1/6) * t * pow(jerk[1], 3);
+			pos.x += t * velocity[0] + 0.5 * t * pow(acceleration[0], 2) + (1/6) * t * pow(jerk[0], 3);
+			velocity[0] += acceleration[0] * t + 0.5 * t * pow(jerk[0], 2);
+			velocity[1] += acceleration[1] * t + 0.5 * t * pow(jerk[1], 2);
+			acceleration[0] += jerk[0] * t;
+			acceleration[1] += jerk[1] * t;
+			last_move = epochTime();
+			cout << "Position: " << pos.x << ", " << pos.y << endl;
+			cout << "Jerk: " << jerk[0] << ", " << jerk[1] << endl;
 		}
-		//function to display the bully
+		void left() {
+			if (right_duration != 0) {
+				right_duration = 0;
+			}
+			if (left_duration == 0) {
+				left_duration = epochTime();
+			}
+			else {
+				jerk[0] -= ((epochTime() - left_duration) / 1000) * JERK_PER_SECOND;
+				left_duration = epochTime();
+			}
+		}
+		void right() {
+			if (left_duration != 0) {
+				left_duration = 0;
+			}
+			if (right_duration == 0) {
+				right_duration = epochTime();
+			}
+			else {
+				jerk[0] += ((epochTime() - right_duration) / 1000) * JERK_PER_SECOND;
+			}
+		}
+		void up() {
+			if (down_duration != 0) {
+				down_duration = 0;
+			}
+			if (up_duration == 0) {
+				up_duration = epochTime();
+			}
+			else {
+				jerk[1] -= (epochTime() - up_duration) * JERK_PER_SECOND; 
+			}
+		}
+		void down() {
+			if (up_duration != 0) {
+				up_duration = 0;
+			}
+			if (down_duration == 0) {
+				down_duration = epochTime();
+			}
+			else {
+				jerk[1] += (epochTime() - up_duration) * JERK_PER_SECOND;
+			}
+		}
 };
 //Button class
 class Button {
@@ -111,19 +171,67 @@ const char* game(SDL_Window* win) {
 	SDL_Event ev;
 	SDL_Surface* bg = IMG_Load("Images/bg.png");
 	SDL_Rect bg_rect = makeRect(0, 0, 1000, 600);
+	bool going_up = false;
+	bool going_down = false;
+	bool going_right = false;
+	bool going_left = false;
 	while (true) {
 		SDL_BlitSurface(bg, NULL, SDL_GetWindowSurface(win), &bg_rect);
 		jerk.display();
+		jerk.move();
 		SDL_UpdateWindowSurface(win);
+		//get events
 		while (SDL_PollEvent(&ev)) {
 			if (ev.type == SDL_QUIT) {
 				return "Quit";
 			}
-			//arrows(move)
+			//arrows keys(move via jerk)
+			if (ev.type == SDL_KEYDOWN) {
+				if (ev.key.keysym.sym == SDLK_LEFT) {
+					going_right = false;
+					going_left = true;
+				}
+				if (ev.key.keysym.sym == SDLK_RIGHT) {
+					going_left = false;
+					going_right = true;
+				}
+				if (ev.key.keysym.sym == SDLK_UP) {
+					going_down = false;
+					going_up = true;
+				}
+				if (ev.key.keysym.sym == SDLK_DOWN) {
+					going_up = false;
+					going_down = true;
+				}
+			}
+			if (ev.type == SDL_KEYUP) {
+				if (ev.key.keysym.sym == SDLK_LEFT) {
+					going_left = false;
+				}
+				if (ev.key.keysym.sym == SDLK_RIGHT) {
+					going_right = false;
+				}
+				if (ev.key.keysym.sym == SDLK_UP) {
+					going_up = false;
+				}
+				if (ev.key.keysym.sym == SDLK_DOWN) {
+					going_down = false;
+				}
+			}
+		}
+		if (going_left) {
+			jerk.left();
+		}
+		if (going_right) {
+			jerk.right();
+		}
+		if (going_up) {
+			jerk.up();
+		}
+		if (going_down) {
+			jerk.down();
 		}
 	}
-//	get events
-//		arrows(move)
 //		space(bully if your close enough to someone who has your item or, if their is nobody, but their is a bully, then you can knock them down before they bully you)
 //		a (add item to your bulliers inventory if your close enough to something)
 //		cursor (can be used to exit back to homescreen)
@@ -135,7 +243,6 @@ const char* game(SDL_Window* win) {
 }
 //main function(will call the mainloop functions)
 int main(int argc, char** args) {
-	cout << epochTime() << endl;
 	//Setup
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDL_Window* win = SDL_CreateWindow("Control the Jerk", 0, 0, 1000, 660, 0);
