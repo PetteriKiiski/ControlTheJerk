@@ -1,5 +1,4 @@
 //A simple game were you control the jerk, of a jerk, so that you can bully people.
-#define JERK_PER_SECOND 0.001
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <iostream>
@@ -7,6 +6,7 @@
 #include <chrono>
 using namespace std;
 using namespace chrono;
+const double JERK_PER_SECOND = 1;
 //to check if a point collides with a rect
 bool pointRectCollision (int x, int y, SDL_Rect rect) {
 	if (x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h) {
@@ -22,7 +22,7 @@ bool RectCollision (SDL_Rect rect1, SDL_Rect rect2) {
 	return false;
 }
 
-uint64_t epochTime() {
+double epochTime() {
 	return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 }
 SDL_Rect makeRect(int x, int y, int w, int h) {
@@ -44,7 +44,7 @@ class Jerk {
 		SDL_Rect pos;
 		SDL_Window* win;
 		uint64_t last_move = epochTime();
-		uint64_t left_duration = 0;
+		double left_duration = 0;
 		uint64_t right_duration = 0;
 		uint64_t up_duration = 0;
 		uint64_t down_duration = 0;
@@ -70,19 +70,27 @@ class Jerk {
 			acceleration[0] += jerk[0] * t;
 			acceleration[1] += jerk[1] * t;
 			last_move = epochTime();
-			cout << "Position: " << pos.x << ", " << pos.y << endl;
-			cout << "Jerk: " << jerk[0] << ", " << jerk[1] << endl;
+//			cout << "Position: " << pos.x << ", " << pos.y << endl;
+//			cout << "Jerk: " << jerk[0] << ", " << jerk[1] << endl;
 		}
 		void left() {
 			if (right_duration != 0) {
 				right_duration = 0;
+//				cout << "right WAS on" << endl;
 			}
 			if (left_duration == 0) {
 				left_duration = epochTime();
+//				cout << "left has never been on before!" << endl;
 			}
 			else {
-				jerk[0] -= ((epochTime() - left_duration) / 1000) * JERK_PER_SECOND;
-				left_duration = epochTime();
+//				cout << "the usual" << endl;
+				double time = ((epochTime() - left_duration) / 1000);
+				jerk[0] -= time * JERK_PER_SECOND;
+//				cout << ((epochTime() - left_duration) / 1000) * JERK_PER_SECOND << endl;
+				if (((epochTime() - left_duration) / 1000) * JERK_PER_SECOND != 0) {
+					left_duration = epochTime();
+					cout << jerk[0] << ", " << ((epochTime() - left_duration) / 1000) * JERK_PER_SECOND << endl;
+				}
 			}
 		}
 		void right() {
